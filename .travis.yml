@@ -1,23 +1,26 @@
 language: python
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-virtualenv:
-  system_site_packages: true
-before_install:
-  - SITE_PKG_DIR=$VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/site-packages
-  - rm -f $VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/no-global-site-packages.txt
-  - sudo apt-get install python-numpy
-  - sudo apt-get install python-scipy
-install:
-  - "sudo pip install -U pandas"
-  - "sudo pip install -U scikit-learn"
-  - "sudo pip install -U statsmodels"
-  - "sudo pip install -U patsy"
-  - "sudo pip install -U coveralls"
-script:
-  - nosetests --with-coverage --cover-package=category_encoders
-after_success:
-  - coveralls
+
+cache:
+  apt: true
+  # We use three different cache directory
+  # to work around a Travis bug with multi-platform cache
+  directories:
+  - $HOME/.cache/pip
+  - $HOME/download
+env:
+  global:
+    # Directory where tests are run from
+    - TEST_DIR=/tmp/test_dir/
+    - MODULE=category_encoders
+  matrix:
+    # The versions should match the minimal requirements in requirements.txt and setup.py
+    - DISTRIB="conda" PYTHON_VERSION="2.7" CYTHON_VERSION="0.21"
+      NUMPY_VERSION="1.11.1" PANDAS_VERSION="0.21.1" PATSY_VERSION="0.4.1"
+      SCIKIT_VERSION="0.17.1" SCIPY_VERSION="0.17.0" STATSMODELS_VERSION="0.6.1"
+    - DISTRIB="conda" PYTHON_VERSION="3.5" COVERAGE="true" CYTHON_VERSION="0.23.4"
+      NUMPY_VERSION="1.11.1" PANDAS_VERSION="0.21.1" PATSY_VERSION="0.4.1"
+      SCIKIT_VERSION="0.17.1" SCIPY_VERSION="0.17.0" STATSMODELS_VERSION="0.6.1"
+
+install: source ci_scripts/install.sh
+script: bash ci_scripts/test.sh
+after_success: source ci_scripts/success.sh

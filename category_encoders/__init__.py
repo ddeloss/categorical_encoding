@@ -6,15 +6,23 @@
 
 """
 
-from category_encoders.backward_difference import backward_difference_coding, BackwardDifferenceEncoder
-from category_encoders.binary import binary, BinaryEncoder
-from category_encoders.hashing import hashing_trick, hashing_trick_4, hashing_trick_8, hashing_trick_16, hashing_trick_32, hashing_trick_64, hashing_trick_128, HashingEncoder
-from category_encoders.helmert import helmert_coding, HelmertEncoder
-from category_encoders.one_hot import one_hot
-from sklearn.preprocessing import OneHotEncoder
-from category_encoders.ordinal import ordinal_encoding, OrdinalEncoder
-from category_encoders.sum_coding import sum_coding, SumEncoder
-from category_encoders.polynomial import polynomial_coding, PolynomialEncoder
+from category_encoders.backward_difference import BackwardDifferenceEncoder
+from category_encoders.binary import BinaryEncoder
+from category_encoders.hashing import HashingEncoder
+from category_encoders.helmert import HelmertEncoder
+from category_encoders.one_hot import OneHotEncoder
+from category_encoders.ordinal import OrdinalEncoder
+from category_encoders.sum_coding import SumEncoder
+from category_encoders.polynomial import PolynomialEncoder
+from category_encoders.basen import BaseNEncoder
+from category_encoders.leave_one_out import LeaveOneOutEncoder
+from category_encoders.target_encoder import TargetEncoder
+from category_encoders.woe import WOEEncoder
+from category_encoders.m_estimate import MEstimateEncoder
+from category_encoders.james_stein import JamesSteinEncoder
+from category_encoders.cat_boost import CatBoostEncoder
+
+__version__ = '2.0.0'
 
 __author__ = 'willmcginnis'
 
@@ -26,5 +34,13 @@ __all__ = [
     'OneHotEncoder',
     'OrdinalEncoder',
     'SumEncoder',
-    'PolynomialEncoder'
+    'PolynomialEncoder',
+    'BaseNEncoder',
+    'LeaveOneOutEncoder',
+    'TargetEncoder',
+    'WOEEncoder',
+    'MEstimateEncoder',
+    'JamesSteinEncoder',
+    'CatBoostEncoder',
+    'LeaveOneOutEncoderV2'
 ]

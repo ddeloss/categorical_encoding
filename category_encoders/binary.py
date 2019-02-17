@@ -1,94 +1,147 @@
-"""
+"""Binary encoding"""
 
-.. module:: binary
-  :synopsis:
-  :platform:
-
-"""
-
-import copy
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
-import numpy as np
-from category_encoders.ordinal import OrdinalEncoder
+
+import category_encoders as ce
 
 __author__ = 'willmcginnis'
 
 
-def binary(X_in, cols=None):
-    """
-    Binary encoding encodes the integers as binary code with one column per digit.
-
-    :param X:
-    :return:
-    """
-
-    X = copy.deepcopy(X_in)
-
-    if cols is None:
-        cols = X.columns.values
-
-    bin_cols = []
-    for col in cols:
-        # figure out how many digits we need to represent the classes present
-        if X[col].max() == 0:
-            digits = 1
-        else:
-            digits = int(np.ceil(np.log2(X[col].max())))
-
-        # map the ordinal column into a list of these digits, of length digits
-        X[col] = X[col].map(lambda x: list("{0:b}".format(int(x)))) \
-            .map(lambda x: x if len(x) == digits else [0 for _ in range(digits - len(x))] + x)
-
-        for dig in range(digits):
-            X[col + '_%d' % (dig, )] = X[col].map(lambda x: int(x[dig]))
-            bin_cols.append(col + '_%d' % (dig, ))
-
-    X = X.reindex(columns=bin_cols)
-
-    return X
-
-
 class BinaryEncoder(BaseEstimator, TransformerMixin):
-    """
-    Binary encoding encodes the integers as binary code with one column per digit.
+    """Binary encoding for categorical variables, similar to onehot, but stores categories as binary bitstrings.
+
+    Parameters
+    ----------
+
+    verbose: int
+        integer indicating verbosity of output. 0 for none.
+    cols: list
+        a list of columns to encode, if None, all string columns will be encoded.
+    drop_invariant: bool
+        boolean for whether or not to drop columns with 0 variance.
+    return_df: bool
+        boolean for whether to return a pandas DataFrame from transform (otherwise it will be a numpy array).
+    handle_unknown: str
+        options are 'error', 'return_nan' and 'value', defaults to 'value'. Warning: if value is used,
+        an extra column will be added in if the transform matrix has unknown categories.  This can cause
+        unexpected changes in dimension in some cases.
+    handle_missing: str
+        options are 'error', 'return_nan', 'value', and 'indicator', defaults to 'indicator'. Warning: if indicator is used,
+        an extra column will be added in if the transform matrix has unknown categories.  This can cause
+        unexpected changes in dimension in some cases.
+
+    Example
+    -------
+    >>> from category_encoders import *
+    >>> import pandas as pd
+    >>> from sklearn.datasets import load_boston
+    >>> bunch = load_boston()
+    >>> y = bunch.target
+    >>> X = pd.DataFrame(bunch.data, columns=bunch.feature_names)
+    >>> enc = BinaryEncoder(cols=['CHAS', 'RAD']).fit(X, y)
+    >>> numeric_dataset = enc.transform(X)
+    >>> print(numeric_dataset.info())
+    <class 'pandas.core.frame.DataFrame'>
+    RangeIndex: 506 entries, 0 to 505
+    Data columns (total 18 columns):
+    CRIM       506 non-null float64
+    ZN         506 non-null float64
+    INDUS      506 non-null float64
+    CHAS_0     506 non-null int64
+    CHAS_1     506 non-null int64
+    NOX        506 non-null float64
+    RM         506 non-null float64
+    AGE        506 non-null float64
+    DIS        506 non-null float64
+    RAD_0      506 non-null int64
+    RAD_1      506 non-null int64
+    RAD_2      506 non-null int64
+    RAD_3      506 non-null int64
+    RAD_4      506 non-null int64
+    TAX        506 non-null float64
+    PTRATIO    506 non-null float64
+    B          506 non-null float64
+    LSTAT      506 non-null float64
+    dtypes: float64(11), int64(7)
+    memory usage: 71.2 KB
+    None
 
     """
-    def __init__(self, verbose=0, cols=None):
-        """
 
-        :param verbose:
-        :param cols:
-        :return:
-        """
-
-        self.verbose = verbose
-        self.cols = cols
-        self.ordinal_encoder = OrdinalEncoder(verbose=verbose, cols=cols)
+    def __init__(self, verbose=0, cols=None, mapping=None, drop_invariant=False, return_df=True,
+                 handle_unknown='value', handle_missing='value'):
+        self.base_n_encoder = ce.BaseNEncoder(base=2, verbose=verbose, cols=cols, mapping=mapping,
+                                              drop_invariant=drop_invariant, return_df=return_df,
+                                              handle_unknown=handle_unknown, handle_missing=handle_missing)
 
     def fit(self, X, y=None, **kwargs):
+        """Fit encoder according to X and y.
+
+        Parameters
+        ----------
+
+        X : array-like, shape = [n_samples, n_features]
+            Training vectors, where n_samples is the number of samples
+            and n_features is the number of features.
+        y : array-like, shape = [n_samples]
+            Target values.
+
+        Returns
+        -------
+
+        self : encoder
+            Returns self.
+
         """
 
-        :param X:
-        :param y:
-        :param kwargs:
-        :return:
-        """
-
-        self.ordinal_encoder = self.ordinal_encoder.fit(X)
+        self.base_n_encoder.fit(X, y, **kwargs)
 
         return self
 
-    def transform(self, X):
+    def transform(self, X, override_return_df=False):
+        """Perform the transformation to new categorical data.
+
+        Parameters
+        ----------
+
+        X : array-like, shape = [n_samples, n_features]
+
+        Returns
+        -------
+
+        p : array, shape = [n_samples, n_numeric + N]
+            Transformed values with encoding applied.
+
         """
 
-        :param X:
-        :return:
+        return self.base_n_encoder.transform(X)
+
+    def inverse_transform(self, X_in):
+        """
+        Perform the inverse transformation to encoded data.
+
+        Parameters
+        ----------
+        X_in : array-like, shape = [n_samples, n_features]
+
+        Returns
+        -------
+        p: array, the same size of X_in
+
         """
 
-        if not isinstance(X, pd.DataFrame):
-            X = pd.DataFrame(X)
+        return self.base_n_encoder.inverse_transform(X_in)
 
-        X = self.ordinal_encoder.transform(X)
+    def get_feature_names(self):
+        """
+        Returns the names of all transformed / added columns.
 
-        return binary(X, cols=self.cols)
+        Returns:
+        --------
+        feature_names: list
+            A list with all feature names transformed or added.
+            Note: potentially dropped features are not included!
+        """
+
+        return self.base_n_encoder.get_feature_names()
